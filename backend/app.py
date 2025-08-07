@@ -1,30 +1,23 @@
-
 from flask import Flask, request, jsonify
-import openai
-import os
+from flask_cors import CORS
 
 app = Flask(__name__)
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-@app.route("/api/check", methods=["POST"])
-def check_text():
+# Allow requests from your frontend explicitly
+CORS(app, resources={r"/*": {"origins": "http://192.168.100.234:5173"}})
+
+@app.route('/check', methods=['POST'])
+def check_output():
     data = request.get_json()
-    text = data.get("text", "")
+    input_text = data.get("input", "")
+    output_text = data.get("output", "")
 
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
+    if output_text.lower() in input_text.lower():
+        result = "✅ The output seems to be related to the input."
+    else:
+        result = "⚠️ The output does not seem directly related to the input."
 
-    try:
-        response = openai.Moderation.create(input=text)
-        results = response["results"][0]
+    return jsonify({"result": result})
 
-        return jsonify({
-            "flagged": results["flagged"],
-            "categories": results["categories"]
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=3000)
